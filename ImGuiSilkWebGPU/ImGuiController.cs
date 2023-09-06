@@ -263,13 +263,13 @@ public unsafe class ImGuiController : IDisposable
 
         VertexAttribute* vertexAttrib = stackalloc VertexAttribute[3];
         vertexAttrib[0].Format = VertexFormat.Float32x2;
-        vertexAttrib[0].Offset = 0;
+        vertexAttrib[0].Offset = (ulong)Marshal.OffsetOf<ImDrawVert>(nameof(ImDrawVert.pos));
         vertexAttrib[0].ShaderLocation = 0;
         vertexAttrib[1].Format = VertexFormat.Float32x2;
-        vertexAttrib[1].Offset = 8;
+        vertexAttrib[1].Offset = (ulong)Marshal.OffsetOf<ImDrawVert>(nameof(ImDrawVert.uv));
         vertexAttrib[1].ShaderLocation = 1;
         vertexAttrib[2].Format = VertexFormat.Unorm8x4;
-        vertexAttrib[2].Offset = 16;
+        vertexAttrib[2].Offset = (ulong)Marshal.OffsetOf<ImDrawVert>(nameof(ImDrawVert.col));
         vertexAttrib[2].ShaderLocation = 2;
 
         VertexBufferLayout vbLayout = new VertexBufferLayout()

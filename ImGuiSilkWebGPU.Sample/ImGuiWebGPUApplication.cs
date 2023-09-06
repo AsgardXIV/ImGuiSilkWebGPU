@@ -1,9 +1,11 @@
 ﻿using ImGuiNET;
 using Silk.NET.Core.Native;
 using Silk.NET.Input;
+using Silk.NET.Input.Glfw;
 using Silk.NET.Maths;
 using Silk.NET.WebGPU;
 using Silk.NET.Windowing;
+using Silk.NET.Windowing.Glfw;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using System;
@@ -34,6 +36,9 @@ internal unsafe class ImGuiWebGPUApplication
 
     public void Run()
     {
+        GlfwWindowing.RegisterPlatform();
+        GlfwInput.RegisterPlatform();
+
         InitWindow();
         MainLoop();
         Cleanup();
