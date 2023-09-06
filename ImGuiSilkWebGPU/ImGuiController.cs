@@ -74,8 +74,11 @@ public unsafe class ImGuiController : IDisposable
     public BindGroup* BindImGuiTextureView(TextureView* view)
     {
         var id = (nint)view;
-        if (_viewsById.ContainsKey(id))
-            throw new Exception($"ImGui texture view {id} already exists");
+
+        if (_viewsById.TryGetValue(id, out nint ptr))
+        {
+            return (BindGroup*)ptr;
+        }
             
         BindGroupEntry imageEntry = new()
         {
