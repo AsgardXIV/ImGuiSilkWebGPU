@@ -1,0 +1,34 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.7.34024.191
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ImGuiSilkWebGPU", "ImGuiSilkWebGPU\ImGuiSilkWebGPU.csproj", "{2E156677-0C3F-404A-97A6-D4B518C98B9A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ImGuiSilkWebGPU.Sample", "ImGuiSilkWebGPU.Sample\ImGuiSilkWebGPU.Sample.csproj", "{B7AD04E7-0BA7-41C7-9301-9728BEC2875D}"
+	ProjectSection(ProjectDependencies) = postProject
+		{2E156677-0C3F-404A-97A6-D4B518C98B9A} = {2E156677-0C3F-404A-97A6-D4B518C98B9A}
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{2E156677-0C3F-404A-97A6-D4B518C98B9A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2E156677-0C3F-404A-97A6-D4B518C98B9A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2E156677-0C3F-404A-97A6-D4B518C98B9A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2E156677-0C3F-404A-97A6-D4B518C98B9A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B7AD04E7-0BA7-41C7-9301-9728BEC2875D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B7AD04E7-0BA7-41C7-9301-9728BEC2875D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B7AD04E7-0BA7-41C7-9301-9728BEC2875D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B7AD04E7-0BA7-41C7-9301-9728BEC2875D}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {E1AFAABB-775A-41F2-AB07-9D4FADBFD019}
+	EndGlobalSection
+EndGlobal

@@ -1,0 +1,1 @@
+﻿new ImGuiSilkWebGPU.Sample.ImGuiWebGPUApplication().Run();

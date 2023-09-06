@@ -1,0 +1,7 @@
+\.vs/
+\.idea/
+packages/
+*.user
+bin/
+obj/
+.DS_Store
