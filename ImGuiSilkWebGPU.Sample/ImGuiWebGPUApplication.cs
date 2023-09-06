@@ -197,7 +197,7 @@ internal unsafe class ImGuiWebGPUApplication
             }
         });
 
-        _imGuiController.CreateImGuiTextureView(_catTextureView);
+        _imGuiController.BindImGuiTextureView(_catTextureView);
     }
 
     private void MainLoop()

@@ -70,10 +70,10 @@ public unsafe class ImGuiController : IDisposable
         ImGui.Render();
         DrawImGui(encoder);
     }
-
-    public BindGroup* CreateImGuiTextureView(TextureView* view) => CreateImGuiTextureView((nint)view, view);
-    public BindGroup* CreateImGuiTextureView(nint id, TextureView* view)
+    
+    public BindGroup* BindImGuiTextureView(TextureView* view)
     {
+        var id = (nint)view;
         if (_viewsById.ContainsKey(id))
             throw new Exception($"ImGui texture view {id} already exists");
             
@@ -387,7 +387,7 @@ public unsafe class ImGuiController : IDisposable
 
         _commonBindGroup = _webGPU.DeviceCreateBindGroup(_device, bgCommonDesc);
 
-        CreateImGuiTextureView(_fontView);
+        BindImGuiTextureView(_fontView);
     }
 
     private bool TryMapKeys(Key key, out ImGuiKey imguikey)
