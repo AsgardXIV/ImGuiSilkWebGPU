@@ -169,38 +169,35 @@ internal unsafe class ImGuiWebGPUApplication
 
         _catTextureView = _webGpu.TextureCreateView(_catTexture, viewDescriptor);
 
-        image.ProcessPixelRows(pixels => {
-            for (int y = 0; y < pixels.Height; y++)
-            {
-                Span<Rgba32> row = pixels.GetRowSpan(y);
+        Rgba32[] pixelArray = new Rgba32[image.Width * image.Height];
+        image.CopyPixelDataTo(pixelArray);
 
-                ImageCopyTexture imageCopyTexture = new ImageCopyTexture
-                {
-                    Texture = _catTexture,
-                    Aspect = TextureAspect.All,
-                    MipLevel = 0,
-                    Origin = new Origin3D(0, (uint)y, 0)
-                };
+        ImageCopyTexture imageCopyTexture = new()
+        {
+            Texture = _catTexture,
+            Aspect = TextureAspect.All,
+            MipLevel = 0,
+            Origin = new Origin3D(0, 0, 0)
+        };
 
-                TextureDataLayout layout = new TextureDataLayout
-                {
-                    BytesPerRow = (uint)(pixels.Width * sizeof(Rgba32)),
-                    RowsPerImage = (uint)pixels.Height
-                };
+        TextureDataLayout layout = new()
+        {
+            Offset = 0,
+            BytesPerRow = (uint)(image.Width * sizeof(Rgba32)),
+            RowsPerImage = (uint)image.Height
+        };
 
-                Extent3D extent = new Extent3D
-                {
-                    Width = (uint)pixels.Width,
-                    Height = 1,
-                    DepthOrArrayLayers = 1
-                };
+        Extent3D extent = new()
+        {
+            Width = (uint)image.Width,
+            Height = (uint) image.Height,
+            DepthOrArrayLayers = 1
+        };
 
-                fixed (void* dataPtr = row)
-                {
-                    _webGpu.QueueWriteTexture(_queue, imageCopyTexture, dataPtr, (nuint)(sizeof(Rgba32) * row.Length), layout, extent);
-                }
-            }
-        });
+        fixed (void* dataPtr = pixelArray)
+        {
+            _webGpu.QueueWriteTexture(_queue, &imageCopyTexture, dataPtr, (nuint)(sizeof(Rgba32) * image.Width * image.Height), layout, extent);
+        }
 
         _imGuiController.BindImGuiTextureView(_catTextureView);
     }
