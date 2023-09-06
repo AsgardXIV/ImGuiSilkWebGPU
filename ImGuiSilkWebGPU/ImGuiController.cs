@@ -665,14 +665,18 @@ public unsafe class ImGuiController : IDisposable
 
     public void Dispose()
     {
-        foreach(var renderBuffer in _windowRenderBuffers.FrameRenderBuffers)
+
+        if (_windowRenderBuffers.FrameRenderBuffers != null)
         {
-            _webGPU.BufferDestroy(renderBuffer.VertexBufferGpu);
-            _webGPU.BufferRelease(renderBuffer.VertexBufferGpu);
-            _webGPU.BufferDestroy(renderBuffer.IndexBufferGpu);
-            _webGPU.BufferRelease(renderBuffer.IndexBufferGpu);
-            renderBuffer.IndexBufferMemory?.Dispose();
-            renderBuffer.VertexBufferMemory?.Dispose();
+            foreach (var renderBuffer in _windowRenderBuffers.FrameRenderBuffers)
+            {
+                _webGPU.BufferDestroy(renderBuffer.VertexBufferGpu);
+                _webGPU.BufferRelease(renderBuffer.VertexBufferGpu);
+                _webGPU.BufferDestroy(renderBuffer.IndexBufferGpu);
+                _webGPU.BufferRelease(renderBuffer.IndexBufferGpu);
+                renderBuffer.IndexBufferMemory?.Dispose();
+                renderBuffer.VertexBufferMemory?.Dispose();
+            }
         }
 
         foreach (var bg in _viewsById)
