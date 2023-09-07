@@ -3,7 +3,7 @@
 A simple implementation of ImGui for the Silk.NET WebGPU bindings including a small demo.
 
 ## Demo
-![Demo Image](https://raw.githubusercontent.com/asgardxiv/ImGuiWebGPU/main/images/demo1_small.png)
+![Demo Image](./images/demo1_small.png?raw=true)
 
 ## Acknowledgements
 
