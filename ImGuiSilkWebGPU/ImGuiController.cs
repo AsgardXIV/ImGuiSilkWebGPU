@@ -524,11 +524,11 @@ public unsafe class ImGuiController : IDisposable
             ushort* idxDst = frameRenderBuffer.IndexBufferMemory.AsPtr<ushort>();
             for (int n = 0; n < drawData.CmdListsCount; n++)
             {
-                ImDrawList* cmd_list = drawData.CmdListsRange[n];
-                Unsafe.CopyBlock(vtxDst, cmd_list->VtxBuffer.Data.ToPointer(), (uint)cmd_list->VtxBuffer.Size * (uint)sizeof(ImDrawVert));
-                Unsafe.CopyBlock(idxDst, cmd_list->IdxBuffer.Data.ToPointer(), (uint)cmd_list->IdxBuffer.Size * sizeof(ushort));
-                vtxDst += cmd_list->VtxBuffer.Size;
-                idxDst += cmd_list->IdxBuffer.Size;
+                ImDrawListPtr cmd_list = drawData.CmdLists[n];
+                Unsafe.CopyBlock(vtxDst, cmd_list.VtxBuffer.Data.ToPointer(), (uint)cmd_list.VtxBuffer.Size * (uint)sizeof(ImDrawVert));
+                Unsafe.CopyBlock(idxDst, cmd_list.IdxBuffer.Data.ToPointer(), (uint)cmd_list.IdxBuffer.Size * sizeof(ushort));
+                vtxDst += cmd_list.VtxBuffer.Size;
+                idxDst += cmd_list.IdxBuffer.Size;
             }
 
             // Mapping might be better?
@@ -567,7 +567,7 @@ public unsafe class ImGuiController : IDisposable
         int idxOffset = 0;
         for (int n = 0; n < drawData.CmdListsCount; n++)
         {
-            var cmdList = drawData.CmdListsRange[n];
+            var cmdList = drawData.CmdLists[n];
             for (int i = 0; i < cmdList.CmdBuffer.Size; i++)
             {
                 var cmd = cmdList.CmdBuffer[i];

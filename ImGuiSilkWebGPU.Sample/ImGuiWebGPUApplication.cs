@@ -11,6 +11,7 @@ using SixLabors.ImageSharp.PixelFormats;
 using System;
 using System.Diagnostics;
 using System.Numerics;
+using Silk.NET.Core;
 using Color = Silk.NET.WebGPU.Color;
 
 namespace ImGuiSilkWebGPU.Sample;
@@ -25,7 +26,6 @@ internal unsafe class ImGuiWebGPUApplication
     private Surface* _surface;
     private Adapter* _adapter;
     private Device* _device;
-    private SwapChain* _swapChain;
     private TextureFormat _swapchainFormat;
 
     private Queue* _queue;
@@ -111,28 +111,22 @@ internal unsafe class ImGuiWebGPUApplication
 
     private void CreateOrUpdateSwapchain()
     {
-        if (_swapChain != null)
-        {
-            _webGpu.SwapChainRelease(_swapChain);
-            _swapChain = null;
-            _swapchainFormat = TextureFormat.Undefined;
-        }
-
         if (_window.WindowState == WindowState.Minimized || _window.Size.X <= 0 || _window.Size.Y <= 0)
             return;
 
         _swapchainFormat = _webGpu.SurfaceGetPreferredFormat(_surface, _adapter);
 
-        SwapChainDescriptor swapChainDescriptor = new SwapChainDescriptor
+        var surfaceConfig = new SurfaceConfiguration()
         {
             Usage = TextureUsage.RenderAttachment,
             Format = _swapchainFormat,
+            PresentMode = PresentMode.Fifo,
+            Device = _device,
             Width = (uint)_window.FramebufferSize.X,
             Height = (uint)_window.FramebufferSize.Y,
-            PresentMode = PresentMode.Fifo
         };
 
-        _swapChain = _webGpu.DeviceCreateSwapChain(_device, _surface, swapChainDescriptor);
+        _webGpu.SurfaceConfigure(_surface, surfaceConfig);
     }
 
     private void CreateCustomTextureView()
@@ -209,11 +203,25 @@ internal unsafe class ImGuiWebGPUApplication
 
     private void Render(double delta)
     {
-        if (_swapChain == null)
-            return;
-
-        TextureView* renderView = _webGpu.SwapChainGetCurrentTextureView(_swapChain);
-
+        SurfaceTexture surfaceTexture;
+        _webGpu.SurfaceGetCurrentTexture(_surface, &surfaceTexture);
+        
+        switch (surfaceTexture.Status)
+        {
+            case SurfaceGetCurrentTextureStatus.Success:
+                break;
+            case SurfaceGetCurrentTextureStatus.Timeout:
+            case SurfaceGetCurrentTextureStatus.Outdated:
+            case SurfaceGetCurrentTextureStatus.Lost:
+                _webGpu.TextureRelease(surfaceTexture.Texture);
+                CreateOrUpdateSwapchain();
+                return;
+            default:
+                throw new Exception($"Error... {surfaceTexture.Status}");
+        }
+        
+        var renderView = _webGpu.TextureCreateView(surfaceTexture.Texture, null);
+        
         CommandEncoder* encoder = _webGpu.DeviceCreateCommandEncoder(_device, new CommandEncoderDescriptor());
 
         RenderPassColorAttachment colorAttachment = new RenderPassColorAttachment
@@ -249,7 +257,7 @@ internal unsafe class ImGuiWebGPUApplication
         _webGpu.CommandEncoderRelease(encoder);
         _webGpu.CommandBufferReference(commandBuffer);
 
-        _webGpu.SwapChainPresent(_swapChain);
+        _webGpu.SurfacePresent(_surface);
         _window.SwapBuffers();
     }
 
@@ -275,7 +283,6 @@ internal unsafe class ImGuiWebGPUApplication
         _window.Render -= Render;
         _window.FramebufferResize -= FrameBufferResize;
 
-        _webGpu.SwapChainRelease(_swapChain);
         _webGpu.AdapterRelease(_adapter);
         _webGpu.SurfaceRelease(_surface);
         _webGpu.InstanceRelease(_instance);
