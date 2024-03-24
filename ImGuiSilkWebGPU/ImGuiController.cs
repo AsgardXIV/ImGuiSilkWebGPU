@@ -696,8 +696,8 @@ public unsafe class ImGuiController : IDisposable
 
         _webGPU.SamplerRelease(_fontSampler);
         _webGPU.TextureViewRelease(_fontView);
-        _webGPU.TextureRelease(_fontTexture);
         _webGPU.TextureDestroy(_fontTexture);
+        _webGPU.TextureRelease(_fontTexture);
 
         _webGPU.ShaderModuleRelease(_shaderModule);
         
