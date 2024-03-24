@@ -11,7 +11,6 @@ using SixLabors.ImageSharp.PixelFormats;
 using System;
 using System.Diagnostics;
 using System.Numerics;
-using Silk.NET.Core;
 using Color = Silk.NET.WebGPU.Color;
 
 namespace ImGuiSilkWebGPU.Sample;
@@ -136,7 +135,7 @@ internal unsafe class ImGuiWebGPUApplication
 
         TextureFormat viewFormat = TextureFormat.Rgba8Unorm;
 
-        TextureDescriptor descriptor = new TextureDescriptor
+        TextureDescriptor descriptor = new()
         {
             Size = new Extent3D((uint)image.Width, (uint)image.Height, 1),
             Format = TextureFormat.Rgba8Unorm,
@@ -150,7 +149,7 @@ internal unsafe class ImGuiWebGPUApplication
 
         _catTexture = _webGpu.DeviceCreateTexture(_device, descriptor);
 
-        TextureViewDescriptor viewDescriptor = new TextureViewDescriptor
+        TextureViewDescriptor viewDescriptor = new()
         {
             Format = viewFormat,
             Dimension = TextureViewDimension.Dimension2D,
@@ -224,7 +223,7 @@ internal unsafe class ImGuiWebGPUApplication
         
         CommandEncoder* encoder = _webGpu.DeviceCreateCommandEncoder(_device, new CommandEncoderDescriptor());
 
-        RenderPassColorAttachment colorAttachment = new RenderPassColorAttachment
+        RenderPassColorAttachment colorAttachment = new()
         {
             View = renderView,
             ResolveTarget = null,

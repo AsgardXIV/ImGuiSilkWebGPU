@@ -1,7 +1,6 @@
 ﻿using ImGuiNET;
 using Silk.NET.Core.Native;
 using Silk.NET.Input;
-using Silk.NET.Maths;
 using Silk.NET.WebGPU;
 using Silk.NET.Windowing;
 using System;
@@ -15,14 +14,14 @@ namespace ImGuiSilkWebGPU;
 
 public unsafe class ImGuiController : IDisposable
 {
-    private WebGPU _webGPU;
-    private Device* _device;
-    private Queue* _queue;
-    private IView _view;
-    private IInputContext _inputContext;
-    private TextureFormat _swapChainFormat;
-    private TextureFormat? _depthFormat;
-    private uint _framesInFlight;
+    private readonly WebGPU _webGPU;
+    private readonly Device* _device;
+    private readonly Queue* _queue;
+    private readonly IView _view;
+    private readonly IInputContext _inputContext;
+    private readonly TextureFormat _swapChainFormat;
+    private readonly TextureFormat? _depthFormat;
+    private readonly uint _framesInFlight;
 
     private ShaderModule* _shaderModule;
 
@@ -40,9 +39,9 @@ public unsafe class ImGuiController : IDisposable
     
     private WindowRenderBuffers _windowRenderBuffers = new();
 
-    private readonly Dictionary<nint, nint> _viewsById = new Dictionary<nint, nint>();
-    private readonly List<char> _pressedChars = new();
-    private readonly Dictionary<Key, bool> _keyEvents = new();
+    private readonly Dictionary<nint, nint> _viewsById = [];
+    private readonly List<char> _pressedChars = [];
+    private readonly Dictionary<Key, bool> _keyEvents = [];
 
     public ImGuiController(WebGPU webGPU, Device* device, IView view, IInputContext inputContext, uint framesInFlight, TextureFormat swapChainFormat, TextureFormat? depthFormat)
     {
@@ -127,13 +126,13 @@ public unsafe class ImGuiController : IDisposable
         var src = SilkMarshal.StringToPtr(Shaders.ImGuiShader);
         var shaderName = SilkMarshal.StringToPtr("ImGui Shader");
 
-        ShaderModuleWGSLDescriptor wgslDescriptor = new ShaderModuleWGSLDescriptor
+        ShaderModuleWGSLDescriptor wgslDescriptor = new()
         {
             Code = (byte*)src,
             Chain = new ChainedStruct(sType: SType.ShaderModuleWgslDescriptor)
         };
 
-        ShaderModuleDescriptor descriptor = new ShaderModuleDescriptor
+        ShaderModuleDescriptor descriptor = new()
         {
             Label = (byte*)shaderName,
             NextInChain = (ChainedStruct*)(&wgslDescriptor)
@@ -147,9 +146,7 @@ public unsafe class ImGuiController : IDisposable
 
     private void InitFonts()
     {
-        byte* pixels;
-        int width, height, sizePerPixel;
-        ImGui.GetIO().Fonts.GetTexDataAsRGBA32(out pixels, out width, out height, out sizePerPixel);
+        ImGui.GetIO().Fonts.GetTexDataAsRGBA32(out byte* pixels, out int width, out int height, out int sizePerPixel);
 
         TextureDescriptor textureDescriptor = new()
         {
@@ -234,13 +231,13 @@ public unsafe class ImGuiController : IDisposable
         imageBgLayoutEntries[0].Texture.SampleType = TextureSampleType.Float;
         imageBgLayoutEntries[0].Texture.ViewDimension = TextureViewDimension.Dimension2D;
 
-        BindGroupLayoutDescriptor commonBgLayoutDesc = new BindGroupLayoutDescriptor
+        BindGroupLayoutDescriptor commonBgLayoutDesc = new()
         {
             EntryCount = 2,
             Entries = commonBgLayoutEntries,
         };
 
-        BindGroupLayoutDescriptor imageBgLayoutDesc = new BindGroupLayoutDescriptor
+        BindGroupLayoutDescriptor imageBgLayoutDesc = new()
         {
             EntryCount = 1,
             Entries = imageBgLayoutEntries,
@@ -255,7 +252,7 @@ public unsafe class ImGuiController : IDisposable
         BindGroupLayout** bgLayouts = stackalloc BindGroupLayout*[2];
         bgLayouts[0] = _commonBindGroupLayout;
         bgLayouts[1] = _imageBindGroupLayout;
-        PipelineLayoutDescriptor layoutDesc = new PipelineLayoutDescriptor { BindGroupLayoutCount = 2, BindGroupLayouts = bgLayouts };
+        PipelineLayoutDescriptor layoutDesc = new() { BindGroupLayoutCount = 2, BindGroupLayouts = bgLayouts };
         PipelineLayout* layout = _webGPU.DeviceCreatePipelineLayout(_device, layoutDesc);
 
         var vertexEntry = SilkMarshal.StringToPtr("vs_main");
@@ -272,7 +269,7 @@ public unsafe class ImGuiController : IDisposable
         vertexAttrib[2].Offset = (ulong)Marshal.OffsetOf<ImDrawVert>(nameof(ImDrawVert.col));
         vertexAttrib[2].ShaderLocation = 2;
 
-        VertexBufferLayout vbLayout = new VertexBufferLayout()
+        VertexBufferLayout vbLayout = new()
         {
             ArrayStride = (ulong)sizeof(ImDrawVert),
             StepMode = VertexStepMode.Vertex,
@@ -280,7 +277,7 @@ public unsafe class ImGuiController : IDisposable
             Attributes = vertexAttrib
         };
 
-        BlendState blendState = new BlendState();
+        BlendState blendState = new();
         blendState.Alpha.Operation = BlendOperation.Add;
         blendState.Alpha.SrcFactor = BlendFactor.One;
         blendState.Alpha.DstFactor = BlendFactor.OneMinusSrcAlpha;
@@ -288,14 +285,14 @@ public unsafe class ImGuiController : IDisposable
         blendState.Color.SrcFactor = BlendFactor.SrcAlpha;
         blendState.Color.DstFactor = BlendFactor.OneMinusSrcAlpha;
 
-        ColorTargetState colorTargetState = new ColorTargetState()
+        ColorTargetState colorTargetState = new()
         {
             Blend = &blendState,
             Format = _swapChainFormat,
             WriteMask = ColorWriteMask.All
         };
 
-        FragmentState fragmentState = new FragmentState()
+        FragmentState fragmentState = new()
         {
             Module = _shaderModule,
             EntryPoint = (byte*)fragmentEntry,
@@ -303,7 +300,7 @@ public unsafe class ImGuiController : IDisposable
             Targets = &colorTargetState
         };
 
-        RenderPipelineDescriptor renderPipelineDescriptor = new RenderPipelineDescriptor
+        RenderPipelineDescriptor renderPipelineDescriptor = new()
         {
             Vertex = new VertexState
             {
@@ -393,7 +390,7 @@ public unsafe class ImGuiController : IDisposable
         BindImGuiTextureView(_fontView);
     }
 
-    private bool TryMapKeys(Key key, out ImGuiKey imguikey)
+    private static bool TryMapKeys(Key key, out ImGuiKey imguikey)
     {
         imguikey = key switch
         {
@@ -453,7 +450,7 @@ public unsafe class ImGuiController : IDisposable
         var io = ImGui.GetIO();
 
         var mouseState = _inputContext.Mice[0];
-        var keyboardState = _inputContext.Keyboards[0];
+        _ = _inputContext.Keyboards[0];
 
         io.MouseDown[0] = mouseState.IsButtonPressed(MouseButton.Left);
         io.MouseDown[1] = mouseState.IsButtonPressed(MouseButton.Right);
