@@ -96,7 +96,7 @@ public unsafe class ImGuiController : IDisposable
             Entries = &imageEntry
         };
 
-        var bindGroup = _webGPU.DeviceCreateBindGroup(_device, imageDesc);
+        var bindGroup = _webGPU.DeviceCreateBindGroup(_device, ref imageDesc);
         _viewsById[id] = (nint)bindGroup;
 
         return bindGroup;
@@ -138,7 +138,7 @@ public unsafe class ImGuiController : IDisposable
             NextInChain = (ChainedStruct*)(&wgslDescriptor)
         };
 
-        _shaderModule = _webGPU.DeviceCreateShaderModule(_device, descriptor);
+        _shaderModule = _webGPU.DeviceCreateShaderModule(_device, ref descriptor);
 
         SilkMarshal.Free(src);
         SilkMarshal.Free(shaderName);
@@ -163,7 +163,7 @@ public unsafe class ImGuiController : IDisposable
             Usage = TextureUsage.CopyDst | TextureUsage.TextureBinding
         };
 
-        _fontTexture = _webGPU.DeviceCreateTexture(_device, textureDescriptor);
+        _fontTexture = _webGPU.DeviceCreateTexture(_device, ref textureDescriptor);
 
         TextureViewDescriptor textureViewDescriptor = new()
         {
@@ -176,7 +176,7 @@ public unsafe class ImGuiController : IDisposable
             Aspect = TextureAspect.All
         };
 
-        _fontView = _webGPU.TextureCreateView(_fontTexture, textureViewDescriptor);
+        _fontView = _webGPU.TextureCreateView(_fontTexture, ref textureViewDescriptor);
 
         ImageCopyTexture imageCopyTexture = new()
         {
@@ -197,7 +197,7 @@ public unsafe class ImGuiController : IDisposable
             DepthOrArrayLayers = 1,
         };
 
-        _webGPU.QueueWriteTexture(_queue, &imageCopyTexture, pixels, (nuint)(width * height * sizePerPixel), textureDataLayout, extent);
+        _webGPU.QueueWriteTexture(_queue, &imageCopyTexture, pixels, (nuint)(width * height * sizePerPixel), ref textureDataLayout, ref extent);
 
         SamplerDescriptor samplerDescriptor = new()
         {
@@ -210,7 +210,7 @@ public unsafe class ImGuiController : IDisposable
             MaxAnisotropy = 1,
         };
 
-        _fontSampler = _webGPU.DeviceCreateSampler(_device, samplerDescriptor);
+        _fontSampler = _webGPU.DeviceCreateSampler(_device, ref samplerDescriptor);
 
         ImGui.GetIO().Fonts.SetTexID((nint)_fontView);
     }
@@ -243,8 +243,8 @@ public unsafe class ImGuiController : IDisposable
             Entries = imageBgLayoutEntries,
         };
 
-        _commonBindGroupLayout = _webGPU.DeviceCreateBindGroupLayout(_device, commonBgLayoutDesc);
-        _imageBindGroupLayout = _webGPU.DeviceCreateBindGroupLayout(_device, imageBgLayoutDesc);
+        _commonBindGroupLayout = _webGPU.DeviceCreateBindGroupLayout(_device, ref commonBgLayoutDesc);
+        _imageBindGroupLayout = _webGPU.DeviceCreateBindGroupLayout(_device, ref imageBgLayoutDesc);
     }
 
     private void InitPipeline()
@@ -253,7 +253,7 @@ public unsafe class ImGuiController : IDisposable
         bgLayouts[0] = _commonBindGroupLayout;
         bgLayouts[1] = _imageBindGroupLayout;
         PipelineLayoutDescriptor layoutDesc = new() { BindGroupLayoutCount = 2, BindGroupLayouts = bgLayouts };
-        PipelineLayout* layout = _webGPU.DeviceCreatePipelineLayout(_device, layoutDesc);
+        PipelineLayout* layout = _webGPU.DeviceCreatePipelineLayout(_device, ref layoutDesc);
 
         var vertexEntry = SilkMarshal.StringToPtr("vs_main");
         var fragmentEntry = SilkMarshal.StringToPtr("fs_main");
@@ -346,7 +346,7 @@ public unsafe class ImGuiController : IDisposable
             renderPipelineDescriptor.DepthStencil = &depthStencilState;
         }
 
-        _renderPipeline = _webGPU.DeviceCreateRenderPipeline(_device, renderPipelineDescriptor);
+        _renderPipeline = _webGPU.DeviceCreateRenderPipeline(_device, ref renderPipelineDescriptor);
 
         SilkMarshal.Free(vertexEntry);
         SilkMarshal.Free(fragmentEntry);
@@ -361,7 +361,7 @@ public unsafe class ImGuiController : IDisposable
             Size = (ulong)Helpers.Align(sizeof(Uniforms), 16)
         };
 
-        _uniformsBuffer = _webGPU.DeviceCreateBuffer(_device, bufferDescriptor);
+        _uniformsBuffer = _webGPU.DeviceCreateBuffer(_device, ref bufferDescriptor);
     }
 
     private void InitBindGroups()
@@ -385,7 +385,7 @@ public unsafe class ImGuiController : IDisposable
             Entries = bindGroupEntries
         };
 
-        _commonBindGroup = _webGPU.DeviceCreateBindGroup(_device, bgCommonDesc);
+        _commonBindGroup = _webGPU.DeviceCreateBindGroup(_device, ref bgCommonDesc);
 
         BindImGuiTextureView(_fontView);
     }
@@ -555,7 +555,8 @@ public unsafe class ImGuiController : IDisposable
         {
             _webGPU.RenderPassEncoderSetVertexBuffer(encoder, 0, frameRenderBuffer.VertexBufferGpu, 0, frameRenderBuffer.VertexBufferSize);
             _webGPU.RenderPassEncoderSetIndexBuffer(encoder, frameRenderBuffer.IndexBufferGpu, IndexFormat.Uint16, 0, frameRenderBuffer.IndexBufferSize);
-            _webGPU.RenderPassEncoderSetBindGroup(encoder, 0, _commonBindGroup, 0, 0);
+            uint dynamicOffsets = 0;
+            _webGPU.RenderPassEncoderSetBindGroup(encoder, 0, _commonBindGroup, 0, ref dynamicOffsets);
         }
 
         _webGPU.RenderPassEncoderSetViewport(encoder, 0, 0, drawData.FramebufferScale.X * drawData.DisplaySize.X, drawData.FramebufferScale.Y * drawData.DisplaySize.Y, 0, 1);
@@ -579,7 +580,8 @@ public unsafe class ImGuiController : IDisposable
                     {
                         if (_viewsById.TryGetValue(texId, out nint value))
                         {
-                            _webGPU.RenderPassEncoderSetBindGroup(encoder, 1, (BindGroup*)value, 0, 0);
+                            uint dynamicOffsets = 0;
+                            _webGPU.RenderPassEncoderSetBindGroup(encoder, 1, (BindGroup*)value, 0, ref dynamicOffsets);
                         }                        
                     }
                 }
@@ -618,7 +620,7 @@ public unsafe class ImGuiController : IDisposable
                 Usage = BufferUsage.Vertex | BufferUsage.CopyDst,
             };
 
-            frameRenderBuffer.VertexBufferGpu = _webGPU.DeviceCreateBuffer(_device, desc);
+            frameRenderBuffer.VertexBufferGpu = _webGPU.DeviceCreateBuffer(_device, ref desc);
             frameRenderBuffer.VertexBufferSize = vertSize;
             frameRenderBuffer.VertexBufferMemory = GlobalMemory.Allocate((int)vertSize);
         }
@@ -639,7 +641,7 @@ public unsafe class ImGuiController : IDisposable
                 Usage = BufferUsage.Index | BufferUsage.CopyDst,
             };
 
-            frameRenderBuffer.IndexBufferGpu = _webGPU.DeviceCreateBuffer(_device, desc);
+            frameRenderBuffer.IndexBufferGpu = _webGPU.DeviceCreateBuffer(_device, ref desc);
             frameRenderBuffer.IndexBufferSize = indexSize;
             frameRenderBuffer.IndexBufferMemory = GlobalMemory.Allocate((int)indexSize);
         }

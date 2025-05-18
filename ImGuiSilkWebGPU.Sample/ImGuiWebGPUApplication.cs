@@ -75,15 +75,18 @@ internal unsafe class ImGuiWebGPUApplication
     {
         _webGpu = WebGPU.GetApi();
 
-        _instance = _webGpu.CreateInstance(new InstanceDescriptor());
+        var instanceDescriptor = new InstanceDescriptor();
+        _instance = _webGpu.CreateInstance(ref instanceDescriptor);
         _surface = _window.CreateWebGPUSurface(_webGpu, _instance);
 
-        _webGpu.InstanceRequestAdapter(_instance, new RequestAdapterOptions
+        var requestAdapterOptions = new RequestAdapterOptions
         {
             CompatibleSurface = _surface,
             PowerPreference = PowerPreference.HighPerformance,
             ForceFallbackAdapter = false
-        }, new PfnRequestAdapterCallback((status, adapter, message, userData) =>
+        };
+
+        _webGpu.InstanceRequestAdapter(_instance, ref requestAdapterOptions, new PfnRequestAdapterCallback((status, adapter, message, userData) =>
         {
             if (status != RequestAdapterStatus.Success)
             {
@@ -93,7 +96,8 @@ internal unsafe class ImGuiWebGPUApplication
             _adapter = adapter;
         }), null);
 
-        _webGpu.AdapterRequestDevice(_adapter, default(DeviceDescriptor), new PfnRequestDeviceCallback((status, device, message, userData) =>
+        var deviceDescriptor = default(DeviceDescriptor);
+        _webGpu.AdapterRequestDevice(_adapter, ref deviceDescriptor, new PfnRequestDeviceCallback((status, device, message, userData) =>
         {
             if (status != RequestDeviceStatus.Success)
                 throw new Exception($"Unable to create device: {SilkMarshal.PtrToString((nint)message)}");
@@ -125,7 +129,7 @@ internal unsafe class ImGuiWebGPUApplication
             Height = (uint)_window.FramebufferSize.Y,
         };
 
-        _webGpu.SurfaceConfigure(_surface, surfaceConfig);
+        _webGpu.SurfaceConfigure(_surface, ref surfaceConfig);
     }
 
     private void CreateCustomTextureView()
@@ -138,7 +142,7 @@ internal unsafe class ImGuiWebGPUApplication
         TextureDescriptor descriptor = new()
         {
             Size = new Extent3D((uint)image.Width, (uint)image.Height, 1),
-            Format = TextureFormat.Rgba8Unorm,
+            Format = viewFormat,
             Usage = TextureUsage.CopyDst | TextureUsage.TextureBinding,
             MipLevelCount = 1,
             SampleCount = 1,
@@ -147,7 +151,7 @@ internal unsafe class ImGuiWebGPUApplication
             ViewFormatCount = 1
         };
 
-        _catTexture = _webGpu.DeviceCreateTexture(_device, descriptor);
+        _catTexture = _webGpu.DeviceCreateTexture(_device, ref descriptor);
 
         TextureViewDescriptor viewDescriptor = new()
         {
@@ -160,7 +164,7 @@ internal unsafe class ImGuiWebGPUApplication
             BaseMipLevel = 0
         };
 
-        _catTextureView = _webGpu.TextureCreateView(_catTexture, viewDescriptor);
+        _catTextureView = _webGpu.TextureCreateView(_catTexture, ref viewDescriptor);
 
         Rgba32[] pixelArray = new Rgba32[image.Width * image.Height];
         image.CopyPixelDataTo(pixelArray);
@@ -189,7 +193,7 @@ internal unsafe class ImGuiWebGPUApplication
 
         fixed (void* dataPtr = pixelArray)
         {
-            _webGpu.QueueWriteTexture(_queue, &imageCopyTexture, dataPtr, (nuint)(sizeof(Rgba32) * image.Width * image.Height), layout, extent);
+            _webGpu.QueueWriteTexture(_queue, &imageCopyTexture, dataPtr, (nuint)(sizeof(Rgba32) * image.Width * image.Height), ref layout, ref extent);
         }
 
         _imGuiController.BindImGuiTextureView(_catTextureView);
@@ -220,8 +224,9 @@ internal unsafe class ImGuiWebGPUApplication
         }
         
         var renderView = _webGpu.TextureCreateView(surfaceTexture.Texture, null);
-        
-        CommandEncoder* encoder = _webGpu.DeviceCreateCommandEncoder(_device, new CommandEncoderDescriptor());
+
+        var commandEncoderDescriptor = new CommandEncoderDescriptor();
+        CommandEncoder* encoder = _webGpu.DeviceCreateCommandEncoder(_device, ref commandEncoderDescriptor);
 
         RenderPassColorAttachment colorAttachment = new()
         {
@@ -232,11 +237,12 @@ internal unsafe class ImGuiWebGPUApplication
             ClearValue = new Color(0, 0, 0, 0)
         };
 
-        RenderPassEncoder* renderPass = _webGpu.CommandEncoderBeginRenderPass(encoder, new RenderPassDescriptor
+        var renderPassDescriptor = new RenderPassDescriptor
         {
             ColorAttachmentCount = 1,
             ColorAttachments = &colorAttachment,
-        });
+        };
+        RenderPassEncoder* renderPass = _webGpu.CommandEncoderBeginRenderPass(encoder, ref renderPassDescriptor);
 
         _imGuiController.Update((float)delta);
 
@@ -250,7 +256,8 @@ internal unsafe class ImGuiWebGPUApplication
 
         _webGpu.TextureViewRelease(renderView);
 
-        CommandBuffer* commandBuffer = _webGpu.CommandEncoderFinish(encoder, new CommandBufferDescriptor());
+        var commandBufferDescriptor = new CommandBufferDescriptor();
+        CommandBuffer* commandBuffer = _webGpu.CommandEncoderFinish(encoder, ref commandBufferDescriptor);
         _webGpu.QueueSubmit(_queue, 1, &commandBuffer);
 
         _webGpu.CommandEncoderRelease(encoder);
